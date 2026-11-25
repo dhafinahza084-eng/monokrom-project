@@ -46,7 +46,7 @@ root.title("Lirik")
 root.attributes("-topmost", True)
 lebar, tinggi = root.winfo_screenwidth(), root.winfo_screenheight()
 root.geometry(f"{lebar}x{tinggi}+0+0")
-root.attributes("-fullscreen", True)
+root.state("zoomed")
 
 canvas = tk.Canvas(root, width=lebar, height=tinggi, bg="#bfeaff", highlightthickness=0)
 canvas.pack(expand=True, fill="both")
@@ -130,6 +130,39 @@ for _ in range(18):
         "kecepatan": random.uniform(0.7, 1.8),
     })
 
+def buat_kotak_bulat(x1, y1, x2, y2, radius, **opsi):
+    titik = [
+        x1 + radius, y1, x2 - radius, y1,
+        x2, y1, x2, y1 + radius,
+        x2, y2 - radius, x2, y2,
+        x2 - radius, y2, x1 + radius, y2,
+        x1, y2, x1, y2 - radius,
+        x1, y1 + radius, x1, y1,
+    ]
+    return canvas.create_polygon(titik, smooth=True, splinesteps=12, **opsi)
+
+
+font_judul = tkfont.Font(root=root, family="Segoe UI", size=16, weight="bold")
+lebar_panel_atas = min(360, lebar * 0.6)
+buat_kotak_bulat(
+    lebar / 2 - lebar_panel_atas / 2,
+    tinggi * 0.105 - 22,
+    lebar / 2 + lebar_panel_atas / 2,
+    tinggi * 0.105 + 22,
+    20,
+    fill="#ffffff",
+    stipple="gray25",
+    outline="#ffffff",
+    width=2,
+)
+canvas.create_text(
+    lebar / 2,
+    tinggi * 0.105,
+    text="TULUS  •  MONOKROM",
+    font=font_judul,
+    fill="#17476b",
+)
+
 font_teks = tkfont.Font(root=root, family="Terminal", size=34, weight="bold")
 jarak_huruf = -1
 lapisan_garis = (
@@ -205,7 +238,7 @@ def siapkan_teks(teks):
 
 karakter_teks = []
 kursor_teks = None
-panel_teks = None
+panel_teks = []
 generasi_ketikan = 0
 
 
@@ -216,25 +249,41 @@ def ketik_teks(teks, selesai):
     for bayangan, lapisan, depan, _, _ in karakter_teks:
         for item in (bayangan, *lapisan, depan):
             canvas.delete(item)
-    if panel_teks is not None:
-        canvas.delete(panel_teks)
+    for item in panel_teks:
+        canvas.delete(item)
 
     karakter_teks = siapkan_teks(teks)
     baris_teks = pecah_baris(teks)
     lebar_panel = max(lebar_baris(baris) for baris in baris_teks)
     tinggi_baris = font_teks.metrics("linespace")
     tinggi_panel = len(baris_teks) * tinggi_baris
-    panel_teks = canvas.create_rectangle(
-        lebar / 2 - lebar_panel / 2 - 32,
-        tinggi / 2 - tinggi_panel / 2 - 32,
-        lebar / 2 + lebar_panel / 2 + 32,
-        tinggi / 2 + tinggi_panel / 2 + 32,
+    x1 = lebar / 2 - lebar_panel / 2 - 32
+    y1 = tinggi / 2 - tinggi_panel / 2 - 32
+    x2 = lebar / 2 + lebar_panel / 2 + 32
+    y2 = tinggi / 2 + tinggi_panel / 2 + 32
+    bayangan_panel = buat_kotak_bulat(
+        x1 + 8,
+        y1 + 10,
+        x2 + 8,
+        y2 + 10,
+        24,
+        fill="#17476b",
+        outline="",
+    )
+    panel_utama = buat_kotak_bulat(
+        x1,
+        y1,
+        x2,
+        y2,
+        24,
         fill="#397da5",
         stipple="gray25",
-        outline="#d9f1ff",
-        width=3,
+        outline="#e5f6ff",
+        width=2,
     )
-    canvas.tag_lower(panel_teks, karakter_teks[0][0])
+    panel_teks = [bayangan_panel, panel_utama]
+    canvas.tag_lower(panel_utama, karakter_teks[0][0])
+    canvas.tag_lower(bayangan_panel, panel_utama)
 
     if kursor_teks is not None:
         for pixel in kursor_teks:
